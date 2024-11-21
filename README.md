@@ -1,15 +1,19 @@
 # garmin-activity-analyzer
 
-## Download activities from Garmin Connect
+## Usage
 
-Install the package `garminexport` with `impersonate_browser` support to circumvent Cloudflare's bot protection
+Install dependencies
 
-    pip install 'garminexport[impersonate_browser]'
+    pip install -r requirements.txt
 
-Then download all activities
+### Download activities from Garmin Connect
+
+Use the package `garminexport` with `impersonate_browser` support to circumvent Cloudflare's bot protection.
+
+Download all activities via
 
     garmin-backup --backup-dir=activities <username or email>
 
-## Analyze runs
+### Analyze runs
 
     python plot_activities.py activities/
