@@ -17,3 +17,7 @@ Download all activities via
 ### Analyze runs
 
     python plot_activities.py activities/
+
+This should produce something like this
+
+![Example](res/example.png)
