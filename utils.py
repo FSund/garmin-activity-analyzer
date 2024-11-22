@@ -7,12 +7,9 @@ import pandas as pd
 def process_activity_data(details_json):
     # Extract metric descriptors and their indices
     metrics_map = {
-        descriptor["key"]: descriptor["metricsIndex"]
+        descriptor["metricsIndex"]: descriptor["key"]
         for descriptor in details_json["metricDescriptors"]
     }
-
-    # Invert map
-    metrics_map = dict((v, k) for k, v in metrics_map.items())
 
     # Create DataFrame from activity metrics
     data = []
