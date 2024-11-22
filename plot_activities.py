@@ -102,20 +102,24 @@ def plot_trends(results_df, window=5, show_distance=True):
     line1 = ax1.plot(
         results_df["timestamp"],
         results_df["fastest_pace"],
-        "bo",
+        marker="o",
+        linestyle="",
+        color="C0",
         alpha=0.3,
         label="Pace",
     )
     line1_rolling = ax1.plot(
         results_df["timestamp"],
         rolling_pace,
-        "b-",
+        marker="",
+        linestyle="-",
+        color="C0",
         linewidth=2,
         label=f"Pace ({window}-activity rolling avg)",
     )
 
-    ax1.set_ylabel("Pace (min/km)", color="blue")
-    ax1.tick_params(axis="y", labelcolor="blue")
+    ax1.set_ylabel("Pace (min/km)", color="C0")
+    ax1.tick_params(axis="y", labelcolor="C0")
 
     # Invert the pace axis
     ax1.invert_yaxis()
@@ -124,20 +128,24 @@ def plot_trends(results_df, window=5, show_distance=True):
     line2 = ax2.plot(
         results_df["timestamp"],
         results_df["hr_at_fastest"],
-        "ro",
+        marker="o",
+        linestyle="",
+        color="C1",
         alpha=0.3,
         label="Heart Rate",
     )
     line2_rolling = ax2.plot(
         results_df["timestamp"],
         rolling_hr,
-        "r-",
+        marker="",
+        linestyle="-",
+        color="C1",
         linewidth=2,
         label=f"Heart Rate ({window}-activity rolling avg)",
     )
 
-    ax2.set_ylabel("Heart Rate (bpm)", color="red")
-    ax2.tick_params(axis="y", labelcolor="red")
+    ax2.set_ylabel("Heart Rate (bpm)", color="C1")
+    ax2.tick_params(axis="y", labelcolor="C1")
 
     # Add legend to top plot
     lines1, labels1 = ax1.get_legend_handles_labels()
@@ -150,11 +158,11 @@ def plot_trends(results_df, window=5, show_distance=True):
             results_df["timestamp"],
             results_df["distance"],
             alpha=0.6,
-            color="green",
+            color="C2",
             label="Distance",
         )
-        ax3.set_ylabel("Distance (km)", color="green")
-        ax3.tick_params(axis="y", labelcolor="green")
+        ax3.set_ylabel("Distance (km)", color="C2")
+        ax3.tick_params(axis="y", labelcolor="C2")
         ax3.grid(True, axis="y")
         ax3.legend()
 
