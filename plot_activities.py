@@ -31,9 +31,9 @@ def analyze_multiple_activities(directory="activities"):
 
             # Filter out invalid paces and first 2 kilometers
             valid_splits = km_stats[
-                (km_stats["pace"].notna())
-                & (~np.isinf(km_stats["pace"]))
-                & (km_stats["pace"] > 0)
+                (km_stats["interval_pace"].notna())
+                & (~np.isinf(km_stats["interval_pace"]))
+                & (km_stats["interval_pace"] > 0)
                 & (km_stats["km_interval"] >= 2)  # Skip first 2 km
             ]
 
@@ -42,15 +42,22 @@ def analyze_multiple_activities(directory="activities"):
                 continue
 
             # Find fastest valid split
-            fastest_split = valid_splits.loc[valid_splits["pace"].idxmin()]
+            fastest_split = valid_splits.loc[valid_splits["interval_pace"].idxmin()]
+            
+            # Format pace
+            pace = fastest_split.interval_pace
+            minutes = int(pace)
+            seconds = (pace - minutes)*60
+            seconds = round(seconds)
+            # print(f"Fastest pace: {minutes:02d}:{seconds:02d}")
 
             activity_stats.append(
                 {
                     "timestamp": datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%S%z"),
-                    "distance": valid_splits["km_interval"].max()
-                    + 1,  # Add 1 to account for 0-based indexing
+                    "distance": valid_splits["sumDistance"].max() / 1000,
                     "fastest_km": fastest_split["km_interval"],
-                    "fastest_pace": fastest_split["pace"],
+                    "fastest_pace": fastest_split["interval_pace"],
+                    "fastest_pace_str": f"{minutes:02d}:{seconds:02d}",
                     "hr_at_fastest": fastest_split["directHeartRate"],
                 }
             )

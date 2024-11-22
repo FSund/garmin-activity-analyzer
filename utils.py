@@ -24,20 +24,27 @@ def process_activity_data(details_json):
     # Calculate cumulative distance in kilometers
     df["distance_km"] = df["sumDistance"] / 1000
 
-    # Calculate pace (minutes per kilometer)
-    time_diff = df["sumDuration"].diff()
-    distance_diff = df["sumDistance"].diff() / 1000  # Convert to kilometers
-    df["pace"] = (time_diff / 60) / distance_diff  # Minutes per kilometer
-
     # Group data by kilometer intervals
     df["km_interval"] = df["distance_km"].apply(lambda x: int(x))
-
-    # Calculate averages per kilometer
     km_stats = (
         df.groupby("km_interval")
-        .agg({"directHeartRate": "mean", "pace": "mean"})
+        .agg({
+            "directHeartRate": "mean", 
+            "sumDistance": "max",
+            "sumDuration": "max",
+        })
         .reset_index()
     )
+    
+    # Calculate pace
+    split_duration = km_stats["sumDuration"].diff()/60
+    split_duration.loc[0] = km_stats["sumDuration"].loc[0]/60  # first duration is equal to its sumDuration
+
+    split_distance = km_stats["sumDistance"].diff()/1000
+    split_distance.loc[0] = km_stats["sumDistance"].loc[0]/1000  # first distance is equal to its sumDistance
+
+    km_stats["interval_pace"] = split_duration / split_distance
+    km_stats["interval_length"] = split_distance
 
     return km_stats
 
@@ -94,4 +101,4 @@ if __name__ == "__main__":
     ) as f:
         details_json = json.load(f)
 
-    analyze_activity(details_json)
+    analyze_activity(details_json, plot=True)
