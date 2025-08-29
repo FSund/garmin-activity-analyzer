@@ -9,7 +9,8 @@ filters for running activities (typeKey == "running"), and creates a two-panel p
 """
 
 import json
-import matplotlib.pyplot as plt
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import numpy as np
 from datetime import datetime
 from pathlib import Path
@@ -184,16 +185,28 @@ def plot_running_speeds(activities, output_file=None):
     paces_min_per_km = [1000 / (speed * 60) for speed in speeds]
     
     # Create subplot layout: pace on top, heart rate in middle, weekly distances on bottom
-    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(12, 14), sharex=True)
+    fig = make_subplots(
+        rows=3, cols=1,
+        shared_xaxes=True,
+        subplot_titles=('Running Pace Over Time', 'Heart Rate Over Time', 'Weekly Running Distance and Longest Run'),
+        specs=[[{"secondary_y": False}],
+               [{"secondary_y": False}],
+               [{"secondary_y": True}]],
+        vertical_spacing=0.05
+    )
     
     # Plot pace on the top subplot
-    color1 = 'tab:blue'
-    ax1.plot(timestamps, paces_min_per_km, 'o', color=color1, alpha=0.7, markersize=4, label='Pace')
-    ax1.set_ylabel('Pace (minutes per kilometer)')
-    ax1.tick_params(axis='y')
-    ax1.invert_yaxis()  # Invert y-axis so faster times (lower values) are higher
-    ax1.grid(True, alpha=0.3)
-    ax1.set_title('Running Pace Over Time')
+    fig.add_trace(
+        go.Scatter(
+            x=timestamps, 
+            y=paces_min_per_km, 
+            mode='markers', 
+            name='Pace',
+            marker=dict(color='blue', size=6, opacity=0.7),
+            hovertemplate='Date: %{x}<br>Pace: %{y:.2f} min/km<extra></extra>'
+        ),
+        row=1, col=1
+    )
     
     # Add pace trend line
     timestamps_numeric = [ts.timestamp() for ts in timestamps]
@@ -202,80 +215,127 @@ def plot_running_speeds(activities, output_file=None):
     trend_direction = "improving" if z_pace[0] < 0 else "declining"
     # Convert from min/km per second to sec/km per month: multiply by 86400*30*60
     pace_change_sec_per_month = abs(z_pace[0] * 86400 * 30 * 60)
-    ax1.plot(timestamps, p_pace(timestamps_numeric), "--", color="black", alpha=0.6, 
-             linewidth=2, label=f'Trend: {pace_change_sec_per_month:.1f} sec/km per month ({trend_direction})')
+    
+    fig.add_trace(
+        go.Scatter(
+            x=timestamps,
+            y=p_pace(timestamps_numeric),
+            mode='lines',
+            name=f'Trend: {pace_change_sec_per_month:.1f} sec/km per month ({trend_direction})',
+            line=dict(color='black', dash='dash', width=2),
+            hovertemplate='Date: %{x}<br>Trend: %{y:.2f} min/km<extra></extra>'
+        ),
+        row=1, col=1
+    )
 
     # Add pace statistics lines
     mean_pace = float(np.mean(paces_min_per_km))
     std_pace = float(np.std(paces_min_per_km))
-    ax1.legend(loc='upper left')
     
     # Plot heart rate on the middle subplot
-    color2 = 'tab:red'
     if heart_rates_filtered:
-        ax2.plot(timestamps_hr, heart_rates_filtered, 'o', color=color2, alpha=0.7, markersize=4, label='Heart Rate')
-        ax2.set_ylabel('Average Heart Rate (bpm)')
-        ax2.tick_params(axis='y')
-        ax2.grid(True, alpha=0.3)
-        ax2.set_title('Heart Rate Over Time')
+        fig.add_trace(
+            go.Scatter(
+                x=timestamps_hr, 
+                y=heart_rates_filtered, 
+                mode='markers', 
+                name='Heart Rate',
+                marker=dict(color='red', size=6, opacity=0.7),
+                hovertemplate='Date: %{x}<br>HR: %{y:.0f} bpm<extra></extra>'
+            ),
+            row=2, col=1
+        )
         
         # Add heart rate trend line
         timestamps_hr_numeric = [ts.timestamp() for ts in timestamps_hr]
         z_hr = np.polyfit(timestamps_hr_numeric, heart_rates_filtered, 1)
         p_hr = np.poly1d(z_hr)
         hr_trend_direction = "increasing" if z_hr[0] > 0 else "decreasing"
-        ax2.plot(timestamps_hr, p_hr(timestamps_hr_numeric), "--", color="black", alpha=0.6, 
-                 linewidth=2, label=f'Trend: {abs(z_hr[0]*86400*30):.2f} bpm per month ({hr_trend_direction})')
+        
+        fig.add_trace(
+            go.Scatter(
+                x=timestamps_hr,
+                y=p_hr(timestamps_hr_numeric),
+                mode='lines',
+                name=f'HR Trend: {abs(z_hr[0]*86400*30):.2f} bpm per month ({hr_trend_direction})',
+                line=dict(color='black', dash='dash', width=2),
+                hovertemplate='Date: %{x}<br>HR Trend: %{y:.0f} bpm<extra></extra>'
+            ),
+            row=2, col=1
+        )
 
         # Add heart rate statistics lines
         mean_hr = float(np.mean(heart_rates_filtered))
-        ax2.legend(loc='upper left')
     else:
-        ax2.text(0.5, 0.5, 'No heart rate data available', 
-                 transform=ax2.transAxes, ha='center', va='center', fontsize=14)
-        ax2.set_ylabel('Heart Rate (bpm)')
+        fig.add_annotation(
+            text='No heart rate data available',
+            x=0.5, y=0.5,
+            xref='x2', yref='y2',
+            showarrow=False,
+            font=dict(size=14)
+        )
     
     # Plot weekly distances on the bottom subplot
-    color3 = 'tab:green'
-    color4 = 'tab:orange'
     if week_dates and weekly_distances_km:
-        # Calculate bar width (approximately 6 days to leave some space between bars)
-        if len(week_dates) > 1:
-            bar_width = (week_dates[1] - week_dates[0]).days * 0.8
-        else:
-            bar_width = 6
-        
         # Plot total weekly distance as bars
-        ax3.bar(week_dates, weekly_distances_km, width=bar_width, color=color3, alpha=0.7, label='Total Weekly Distance')
-        ax3.set_ylabel('Total Distance (kilometers)', color=color3)
-        ax3.tick_params(axis='y', labelcolor=color3)
-        ax3.grid(True, alpha=0.3)
-        ax3.set_title('Weekly Running Distance and Longest Run')
+        fig.add_trace(
+            go.Bar(
+                x=week_dates, 
+                y=weekly_distances_km, 
+                name='Total Weekly Distance',
+                marker=dict(color='green', opacity=0.7),
+                hovertemplate='Week of: %{x}<br>Total Distance: %{y:.1f} km<extra></extra>'
+            ),
+            row=3, col=1
+        )
         
-        # Create secondary y-axis for longest runs
-        ax3_twin = ax3.twinx()
+        # Plot longest runs on secondary y-axis
         if week_dates_longest and weekly_longest_km:
-            ax3_twin.plot(week_dates_longest, weekly_longest_km, 'o-', color=color4, alpha=0.8, 
-                         markersize=4, linewidth=2, label='Longest Run')
-            ax3_twin.set_ylabel('Longest Run (kilometers)', color=color4)
-            ax3_twin.tick_params(axis='y', labelcolor=color4)
+            fig.add_trace(
+                go.Scatter(
+                    x=week_dates_longest, 
+                    y=weekly_longest_km, 
+                    mode='markers+lines',
+                    name='Longest Run',
+                    marker=dict(color='orange', size=6),
+                    line=dict(color='orange', width=2),
+                    hovertemplate='Week of: %{x}<br>Longest Run: %{y:.1f} km<extra></extra>'
+                ),
+                row=3, col=1, secondary_y=True
+            )
         
         # Add statistics for total distance
         mean_weekly_km = float(np.mean(weekly_distances_km))
-        
-        # Combine legends from both axes
-        lines1, labels1 = ax3.get_legend_handles_labels()
-        lines2, labels2 = ax3_twin.get_legend_handles_labels() if week_dates_longest and weekly_longest_km else ([], [])
-        ax3.legend(lines1 + lines2, labels1 + labels2, loc='upper left')
     else:
-        ax3.text(0.5, 0.5, 'No distance data available', 
-                 transform=ax3.transAxes, ha='center', va='center', fontsize=14)
-        ax3.set_ylabel('Distance (km)')
+        fig.add_annotation(
+            text='No distance data available',
+            x=0.5, y=0.5,
+            xref='x3', yref='y3',
+            showarrow=False,
+            font=dict(size=14)
+        )
     
-    # Set shared x-axis label and formatting
-    ax3.set_xlabel('Date')
-    plt.xticks(rotation=45)
-    plt.tight_layout()
+    # Update layout and axes
+    fig.update_layout(
+        # height=1000,
+        title_text="Running Activity Analysis",
+        showlegend=True,
+        hovermode='x unified'
+    )
+    
+    # Update y-axes
+    fig.update_yaxes(title_text="Pace (minutes per kilometer)", autorange="reversed", row=1, col=1)
+    fig.update_yaxes(title_text="Average Heart Rate (bpm)", row=2, col=1)
+    fig.update_yaxes(title_text="Total Distance (kilometers)", row=3, col=1)
+    if week_dates_longest and weekly_longest_km:
+        fig.update_yaxes(title_text="Longest Run (kilometers)", secondary_y=True, row=3, col=1)
+    
+    # Update x-axes
+    fig.update_xaxes(title_text="Date", row=3, col=1)
+    
+    # Add grid
+    fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
+    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
     
     # Print statistics
     print("\nPace Statistics:")
@@ -329,17 +389,29 @@ def plot_running_speeds(activities, output_file=None):
     print(f"Date range: {min(timestamps).date()} to {max(timestamps).date()}")
     
     if output_file:
-        plt.savefig(output_file, dpi=300, bbox_inches='tight')
-        print(f"Plot saved to {output_file}")
-    
-    plt.show()
+        if output_file.endswith('.html'):
+            fig.write_html(output_file)
+            print(f"Interactive plot saved to {output_file}")
+            fig.show()
+        else:
+            # For other formats, use write_image (requires kaleido)
+            try:
+                fig.write_image(output_file, width=1200, height=1000)
+                print(f"Plot saved to {output_file}")
+            except Exception as e:
+                print(f"Error saving image: {e}")
+                print("Consider installing kaleido for static image export: pip install kaleido")
+                # Fallback to HTML
+                html_file = output_file.rsplit('.', 1)[0] + '.html'
+                fig.write_html(html_file)
+                print(f"Saved as interactive HTML instead: {html_file}")
 
 
 def main():
     parser = argparse.ArgumentParser(description='Plot running pace and heart rate for running activities')
     parser.add_argument('--activities-dir', default='activities',
                         help='Directory containing activity files (default: activities)')
-    parser.add_argument('--output', '-o', help='Output file path for the plot', default='plot.png')
+    parser.add_argument('--output', '-o', help='Output file path for the plot', default='plot.html')
     parser.add_argument('--list', action='store_true',
                         help='List all running activities without plotting')
     

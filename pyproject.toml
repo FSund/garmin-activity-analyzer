@@ -6,8 +6,9 @@ readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
     "pandas~=2.0",
-    "matplotlib~=3.0",
     "numpy~=2.0",
     "garminexport~=0.6",
     "pyqt6>=6.9.1",
+    "plotly>=6.3.0",
+    "kaleido>=1.0.0",
 ]
