@@ -6,13 +6,11 @@ Install dependencies
 
     uv sync
 
-### Download activities from Garmin Connect
+Download all activities
 
-Download all activities via
+    uv run get_activities.py
 
-    uv run garmin-backup --backup-dir=activities <username or email>
-
-### Analyze runs
+Analyze runs
 
     uv run python plot_summary.py
 

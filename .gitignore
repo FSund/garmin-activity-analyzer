@@ -1,5 +1,8 @@
 activities/
+activities.json
+.garmintokens
 .venv/
+plot.html
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

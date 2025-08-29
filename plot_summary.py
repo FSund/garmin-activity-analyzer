@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Plot running pace and heart rate for all running activities from Garmin activity summary files.
+Plot running pace and heart rate for all running activities from Garmin activities.json file.
 
-This script searches for all *_summary.json files in the activities directory,
+This script loads activity data from a single activities.json file,
 filters for running activities (typeKey == "running"), and creates a two-panel plot:
 - Top panel: Average pace (minutes per kilometer) with inverted y-axis so faster paces appear higher
 - Bottom panel: Average heart rate trends over time
@@ -17,58 +17,64 @@ from pathlib import Path
 import argparse
 
 
-def load_running_activities(activities_dir="activities"):
+def load_running_activities(activities_file="activities.json"):
     """
-    Load all running activities from summary.json files.
+    Load all running activities from the activities.json file.
     
     Args:
-        activities_dir (str): Directory containing the activity files
+        activities_file (str): Path to the activities.json file
         
     Returns:
         list: List of tuples (datetime, average_speed_m_s, average_hr, distance_m, activity_name)
     """
     activities = []
-    activities_path = Path(activities_dir)
     
-    # Find all summary.json files
-    summary_files = list(activities_path.glob("*_summary.json"))
+    if not Path(activities_file).exists():
+        raise FileNotFoundError(f"Activities file not found: {activities_file}")
     
-    if not summary_files:
-        raise FileNotFoundError(f"No summary files found in {activities_dir}")
+    try:
+        with open(activities_file, 'r') as f:
+            all_activities = json.load(f)
+    except (json.JSONDecodeError, FileNotFoundError) as e:
+        raise Exception(f"Error loading activities file: {e}")
     
-    print(f"Found {len(summary_files)} summary files")
+    if not isinstance(all_activities, list):
+        raise Exception(f"Expected activities file to contain a list, got {type(all_activities)}")
+    
+    print(f"Found {len(all_activities)} total activities")
     
     running_count = 0
-    for file_path in summary_files:
+    for activity in all_activities:
         try:
-            with open(file_path, 'r') as f:
-                data = json.load(f)
-            
             # Check if this is a running activity
-            activity_type = data.get("activityTypeDTO", {}).get("typeKey")
+            activity_type = activity.get("activityType", {}).get("typeKey")
             if activity_type != "running":
                 continue
                 
             running_count += 1
             
-            # Extract the timestamp from filename
-            timestamp_str = file_path.name.split('_')[0]
-            timestamp = datetime.fromisoformat(timestamp_str.replace('T', ' ').replace('+00:00', ''))
+            # Extract the timestamp from startTimeGMT
+            start_time_str = activity.get("startTimeGMT")
+            if not start_time_str:
+                print(f"Warning: No start time found for activity {activity.get('activityId', 'unknown')}")
+                continue
             
-            # Extract average speed, heart rate, and distance from summaryDTO
-            summary_dto = data.get("summaryDTO", {})
-            avg_speed = summary_dto.get("averageSpeed")
-            avg_hr = summary_dto.get("averageHR")
-            distance = summary_dto.get("distance")
+            # Parse the timestamp (format: "2025-08-28 15:36:39")
+            timestamp = datetime.strptime(start_time_str, "%Y-%m-%d %H:%M:%S")
+            
+            # Extract average speed, heart rate, and distance
+            avg_speed = activity.get("averageSpeed")
+            avg_hr = activity.get("averageHR")
+            distance = activity.get("distance")
             
             if avg_speed is not None:
-                activity_name = data.get("activityName", "Unknown")
+                activity_name = activity.get("activityName", "Unknown")
                 activities.append((timestamp, avg_speed, avg_hr, distance, activity_name))
             else:
-                print(f"Warning: No average speed found for {file_path.name}")
+                print(f"Warning: No average speed found for activity {activity.get('activityId', 'unknown')}")
                 
-        except (json.JSONDecodeError, KeyError, ValueError) as e:
-            print(f"Error processing {file_path.name}: {e}")
+        except (KeyError, ValueError) as e:
+            print(f"Error processing activity {activity.get('activityId', 'unknown')}: {e}")
             continue
     
     print(f"Found {running_count} running activities with speed data")
@@ -409,8 +415,8 @@ def plot_running_speeds(activities, output_file=None):
 
 def main():
     parser = argparse.ArgumentParser(description='Plot running pace and heart rate for running activities')
-    parser.add_argument('--activities-dir', default='activities',
-                        help='Directory containing activity files (default: activities)')
+    parser.add_argument('--activities-file', default='activities.json',
+                        help='Path to the activities.json file (default: activities.json)')
     parser.add_argument('--output', '-o', help='Output file path for the plot', default='plot.html')
     parser.add_argument('--list', action='store_true',
                         help='List all running activities without plotting')
@@ -419,7 +425,7 @@ def main():
     
     try:
         # Load running activities
-        activities = load_running_activities(args.activities_dir)
+        activities = load_running_activities(args.activities_file)
         
         if args.list:
             # Just list the activities

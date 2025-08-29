@@ -3,12 +3,12 @@ name = "garmin-activity-analyzer"
 version = "0.1.0"
 description = "A tool to analyze Garmin Connect activities"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "pandas~=2.0",
     "numpy~=2.0",
-    "garminexport~=0.6",
     "pyqt6>=6.9.1",
     "plotly>=6.3.0",
     "kaleido>=1.0.0",
+    "garminconnect>=0.2.28",
 ]
