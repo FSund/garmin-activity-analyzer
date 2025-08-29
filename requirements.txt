@@ -1,4 +1,0 @@
-pandas~=2.0
-matplotlib~=3.0
-numpy~=2.0
-garminexport[impersonate_browser]
