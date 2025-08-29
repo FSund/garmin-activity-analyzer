@@ -3,11 +3,14 @@ import json
 from datetime import datetime
 from pathlib import Path
 
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
 from utils import process_activity_data
+
+matplotlib.use('qtagg')
 
 
 def analyze_multiple_activities(directory="activities"):
