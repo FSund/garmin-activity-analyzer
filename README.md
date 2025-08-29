@@ -18,9 +18,9 @@ Download all activities via
 
     uv run python plot_activities.py activities/
 
-### Plot running speeds over time
+### Plot running pace over time
 
-Plot average speed for all running activities:
+Plot average pace (minutes per kilometer) for all running activities:
 
     uv run python plot_running_speeds.py
 
@@ -30,7 +30,7 @@ List all running activities without plotting:
 
 Save plot to a specific file:
 
-    uv run python plot_running_speeds.py --output my_speeds.png
+    uv run python plot_running_speeds.py --output my_pace.png
 
 Use a different activities directory:
 
