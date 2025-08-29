@@ -200,8 +200,10 @@ def plot_running_speeds(activities, output_file=None):
     z_pace = np.polyfit(timestamps_numeric, paces_min_per_km, 1)
     p_pace = np.poly1d(z_pace)
     trend_direction = "improving" if z_pace[0] < 0 else "declining"
+    # Convert from min/km per second to sec/km per month: multiply by 86400*30*60
+    pace_change_sec_per_month = abs(z_pace[0] * 86400 * 30 * 60)
     ax1.plot(timestamps, p_pace(timestamps_numeric), "--", color="black", alpha=0.6, 
-             linewidth=2, label=f'Trend: {abs(z_pace[0]*86400*30):.3f} sec/km per month ({trend_direction})')
+             linewidth=2, label=f'Trend: {pace_change_sec_per_month:.1f} sec/km per month ({trend_direction})')
 
     # Add pace statistics lines
     mean_pace = float(np.mean(paces_min_per_km))
