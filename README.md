@@ -18,23 +18,23 @@ Download all activities via
 
     uv run python plot_activities.py activities/
 
-### Plot running pace over time
+### Plot running pace and heart rate over time
 
-Plot average pace (minutes per kilometer) for all running activities:
+Plot average pace (minutes per kilometer) and heart rate in separate subplots:
 
-    uv run python plot_running_speeds.py
+    uv run python plot_pace.py
 
-List all running activities without plotting:
+List all running activities with pace and heart rate without plotting:
 
-    uv run python plot_running_speeds.py --list
+    uv run python plot_pace.py --list
 
 Save plot to a specific file:
 
-    uv run python plot_running_speeds.py --output my_pace.png
+    uv run python plot_pace.py --output my_pace_hr.png
 
 Use a different activities directory:
 
-    uv run python plot_running_speeds.py --activities-dir path/to/activities
+    uv run python plot_pace.py --activities-dir path/to/activities
 
 This should produce something like this
 
