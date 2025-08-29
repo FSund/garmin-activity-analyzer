@@ -110,59 +110,57 @@ def plot_running_speeds(activities, output_file=None):
     
     # Plot pace on the top subplot
     color1 = 'tab:blue'
-    ax1.plot(timestamps, paces_min_per_km, 'o-', color=color1, markersize=4, 
-             linewidth=1.5, alpha=0.7, label='Pace')
-    ax1.set_ylabel('Pace (minutes per kilometer)', color=color1, fontsize=12)
-    ax1.tick_params(axis='y', labelcolor=color1)
+    ax1.plot(timestamps, paces_min_per_km, 'o', color=color1, markersize=4, label='Pace')
+    ax1.set_ylabel('Pace (minutes per kilometer)')
+    ax1.tick_params(axis='y')
     ax1.invert_yaxis()  # Invert y-axis so faster times (lower values) are higher
     ax1.grid(True, alpha=0.3)
-    ax1.set_title('Running Pace Over Time', fontsize=14, fontweight='bold')
+    ax1.set_title('Running Pace Over Time')
     
     # Add pace trend line
     timestamps_numeric = [ts.timestamp() for ts in timestamps]
     z_pace = np.polyfit(timestamps_numeric, paces_min_per_km, 1)
     p_pace = np.poly1d(z_pace)
     trend_direction = "improving" if z_pace[0] < 0 else "declining"
-    ax1.plot(timestamps, p_pace(timestamps_numeric), "--", color=color1, alpha=0.8, 
+    ax1.plot(timestamps, p_pace(timestamps_numeric), "--", color="black", alpha=0.6, 
              linewidth=2, label=f'Trend: {abs(z_pace[0]*86400):.3f} sec/km per day ({trend_direction})')
     
     # Add pace statistics lines
     mean_pace = float(np.mean(paces_min_per_km))
     std_pace = float(np.std(paces_min_per_km))
-    ax1.axhline(y=mean_pace, color='green', linestyle=':', alpha=0.7,
-                label=f'Mean: {mean_pace:.2f} min/km')
+    # ax1.axhline(y=mean_pace, color='green', linestyle=':', alpha=0.7,
+    #             label=f'Mean: {mean_pace:.2f} min/km')
     ax1.legend(loc='upper left')
     
     # Plot heart rate on the bottom subplot
     color2 = 'tab:red'
     if heart_rates_filtered:
-        ax2.plot(timestamps_hr, heart_rates_filtered, 's-', color=color2, markersize=4, 
-                 linewidth=1.5, alpha=0.7, label='Heart Rate')
-        ax2.set_ylabel('Average Heart Rate (bpm)', color=color2, fontsize=12)
-        ax2.tick_params(axis='y', labelcolor=color2)
+        ax2.plot(timestamps_hr, heart_rates_filtered, 'o', color=color2, markersize=4, label='Heart Rate')
+        ax2.set_ylabel('Average Heart Rate (bpm)')
+        ax2.tick_params(axis='y')
         ax2.grid(True, alpha=0.3)
-        ax2.set_title('Heart Rate Over Time', fontsize=14, fontweight='bold')
+        ax2.set_title('Heart Rate Over Time')
         
         # Add heart rate trend line
         timestamps_hr_numeric = [ts.timestamp() for ts in timestamps_hr]
         z_hr = np.polyfit(timestamps_hr_numeric, heart_rates_filtered, 1)
         p_hr = np.poly1d(z_hr)
         hr_trend_direction = "increasing" if z_hr[0] > 0 else "decreasing"
-        ax2.plot(timestamps_hr, p_hr(timestamps_hr_numeric), "--", color=color2, alpha=0.8, 
+        ax2.plot(timestamps_hr, p_hr(timestamps_hr_numeric), "--", color="black", alpha=0.6, 
                  linewidth=2, label=f'Trend: {abs(z_hr[0]*86400):.2f} bpm per day ({hr_trend_direction})')
         
         # Add heart rate statistics lines
         mean_hr = float(np.mean(heart_rates_filtered))
-        ax2.axhline(y=mean_hr, color='darkred', linestyle=':', alpha=0.7,
-                    label=f'Mean: {mean_hr:.0f} bpm')
+        # ax2.axhline(y=mean_hr, color='darkred', linestyle=':', alpha=0.7,
+        #             label=f'Mean: {mean_hr:.0f} bpm')
         ax2.legend(loc='upper left')
     else:
         ax2.text(0.5, 0.5, 'No heart rate data available', 
                  transform=ax2.transAxes, ha='center', va='center', fontsize=14)
-        ax2.set_ylabel('Heart Rate (bpm)', fontsize=12)
+        ax2.set_ylabel('Heart Rate (bpm)')
     
     # Set shared x-axis label and formatting
-    ax2.set_xlabel('Date', fontsize=12)
+    ax2.set_xlabel('Timestamp')
     plt.xticks(rotation=45)
     plt.tight_layout()
     
