@@ -113,6 +113,42 @@ def calculate_weekly_distances(activities):
     return week_dates, distances_km
 
 
+def calculate_weekly_longest_runs(activities):
+    """
+    Calculate the longest run each week in kilometers.
+    
+    Args:
+        activities (list): List of tuples (datetime, average_speed_m_s, average_hr, distance_m, activity_name)
+        
+    Returns:
+        tuple: (week_dates, longest_runs_km)
+            week_dates: List of datetime objects representing the start of each week (Monday)
+            longest_runs_km: List of longest run distances in kilometers for each week
+    """
+    from collections import defaultdict
+    import datetime as dt
+    
+    weekly_longest = defaultdict(float)
+    
+    for timestamp, _, _, distance, _ in activities:
+        if distance is not None:
+            # Find the Monday of the week containing this activity
+            days_since_monday = timestamp.weekday()
+            week_start = timestamp - dt.timedelta(days=days_since_monday)
+            week_start = week_start.replace(hour=0, minute=0, second=0, microsecond=0)
+            
+            # Keep track of the longest run in each week
+            distance_km = distance / 1000.0
+            weekly_longest[week_start] = max(weekly_longest[week_start], distance_km)
+    
+    # Sort by week and return as lists
+    sorted_weeks = sorted(weekly_longest.items())
+    week_dates = [week for week, _ in sorted_weeks]
+    longest_runs_km = [distance for _, distance in sorted_weeks]
+    
+    return week_dates, longest_runs_km
+
+
 def plot_running_speeds(activities, output_file=None):
     """
     Plot average pace over time as minutes per kilometer with inverted y-axis,
@@ -140,6 +176,9 @@ def plot_running_speeds(activities, output_file=None):
     
     # Calculate weekly distances
     week_dates, weekly_distances_km = calculate_weekly_distances(activities)
+    
+    # Calculate weekly longest runs
+    week_dates_longest, weekly_longest_km = calculate_weekly_longest_runs(activities)
     
     # Convert speed from m/s to pace in minutes per kilometer
     paces_min_per_km = [1000 / (speed * 60) for speed in speeds]
@@ -196,6 +235,7 @@ def plot_running_speeds(activities, output_file=None):
     
     # Plot weekly distances on the bottom subplot
     color3 = 'tab:green'
+    color4 = 'tab:orange'
     if week_dates and weekly_distances_km:
         # Calculate bar width (approximately 6 days to leave some space between bars)
         if len(week_dates) > 1:
@@ -203,15 +243,28 @@ def plot_running_speeds(activities, output_file=None):
         else:
             bar_width = 6
         
-        ax3.bar(week_dates, weekly_distances_km, width=bar_width, color=color3, alpha=0.7, label='Weekly Distance')
-        ax3.set_ylabel('Distance (kilometers)')
-        ax3.tick_params(axis='y')
+        # Plot total weekly distance as bars
+        ax3.bar(week_dates, weekly_distances_km, width=bar_width, color=color3, alpha=0.7, label='Total Weekly Distance')
+        ax3.set_ylabel('Total Distance (kilometers)', color=color3)
+        ax3.tick_params(axis='y', labelcolor=color3)
         ax3.grid(True, alpha=0.3)
-        ax3.set_title('Weekly Running Distance')
+        ax3.set_title('Weekly Running Distance and Longest Run')
         
-        # Add statistics
+        # Create secondary y-axis for longest runs
+        ax3_twin = ax3.twinx()
+        if week_dates_longest and weekly_longest_km:
+            ax3_twin.plot(week_dates_longest, weekly_longest_km, 'o-', color=color4, alpha=0.8, 
+                         markersize=4, linewidth=2, label='Longest Run')
+            ax3_twin.set_ylabel('Longest Run (kilometers)', color=color4)
+            ax3_twin.tick_params(axis='y', labelcolor=color4)
+        
+        # Add statistics for total distance
         mean_weekly_km = float(np.mean(weekly_distances_km))
-        ax3.legend(loc='upper left')
+        
+        # Combine legends from both axes
+        lines1, labels1 = ax3.get_legend_handles_labels()
+        lines2, labels2 = ax3_twin.get_legend_handles_labels() if week_dates_longest and weekly_longest_km else ([], [])
+        ax3.legend(lines1 + lines2, labels1 + labels2, loc='upper left')
     else:
         ax3.text(0.5, 0.5, 'No distance data available', 
                  transform=ax3.transAxes, ha='center', va='center', fontsize=14)
@@ -258,6 +311,18 @@ def plot_running_speeds(activities, output_file=None):
     else:
         print("\nNo distance data available")
     
+    if week_dates_longest and weekly_longest_km:
+        mean_longest_km = float(np.mean(weekly_longest_km))
+        std_longest_km = float(np.std(weekly_longest_km))
+        print("\nWeekly Longest Run Statistics:")
+        print(f"Total weeks with longest runs: {len(weekly_longest_km)}")
+        print(f"Mean longest run: {mean_longest_km:.1f} km")
+        print(f"Standard deviation: {std_longest_km:.1f} km")
+        print(f"Longest single run: {max(weekly_longest_km):.1f} km")
+        print(f"Shortest longest run: {min(weekly_longest_km):.1f} km")
+    else:
+        print("\nNo longest run data available")
+    
     # Date range
     print(f"Date range: {min(timestamps).date()} to {max(timestamps).date()}")
     
@@ -272,7 +337,7 @@ def main():
     parser = argparse.ArgumentParser(description='Plot running pace and heart rate for running activities')
     parser.add_argument('--activities-dir', default='activities',
                         help='Directory containing activity files (default: activities)')
-    parser.add_argument('--output', '-o', help='Output file path for the plot')
+    parser.add_argument('--output', '-o', help='Output file path for the plot', default='plot.png')
     parser.add_argument('--list', action='store_true',
                         help='List all running activities without plotting')
     
