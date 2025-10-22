@@ -1,20 +1,14 @@
-# import datetime
-# from datetime import timezone
 import json
 import logging
 import os
-# import sys
 from getpass import getpass
 
-# import readchar
 import requests
 from garth.exc import GarthHTTPError
 
 from garminconnect import (
     Garmin,
     GarminConnectAuthenticationError,
-    # GarminConnectConnectionError,
-    # GarminConnectTooManyRequestsError,
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -24,7 +18,6 @@ logger = logging.getLogger(__name__)
 email = os.getenv("EMAIL")
 password = os.getenv("PASSWORD")
 tokenstore = os.getenv("GARMINTOKENS") or ".garmintokens"
-# tokenstore_base64 = os.getenv("GARMINTOKENS_BASE64") or "~/.garminconnect_base64"
 api = None
 
 
